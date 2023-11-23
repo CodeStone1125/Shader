@@ -63,17 +63,42 @@ Model* Model::fromObjectFile(const char* obj_file) {
       iss >> texcoord.x >> texcoord.y;
       texcoords.push_back(texcoord);
     } else if (type == "f") {
-      for (int i = 0; i < 3; ++i) {
-        int vertexIndex, texcoordIndex, normalIndex;
-        char slash;  // to handle slashes in face data
+      int vertexIndex, texcoordIndex, normalIndex;
+      char slash;  // to handle slashes in face data
 
-        iss >> vertexIndex >> slash >> texcoordIndex >> slash >> normalIndex;
+      // 用於存儲面的頂點數量
+      int vertexCount = 0;
 
-        // Adjust indices to 0-based indexing
+      // 使用 do-while 循環讀取所有的頂點
+      do {
+        iss >> vertexIndex;
+
+        // 將每個頂點的索引添加到相應的 vector 中
         positionIndices.push_back(vertexIndex - 1);
-        texcoordIndices.push_back(texcoordIndex - 1);
-        normalIndices.push_back(normalIndex - 1);
-      }
+
+        // 檢查下一個字符是否是 '/'
+        if (iss.peek() == '/') {
+          iss.ignore();  // 忽略 '/'
+          // 檢查是否有法線坐標
+          if (iss.peek() != '/') {
+            iss >> texcoordIndex;
+            texcoordIndices.push_back(texcoordIndex - 1);
+          }
+          // 檢查是否有法線坐標
+          if (iss.peek() == '/') {
+            iss.ignore();  // 忽略 '/'
+            iss >> normalIndex;
+            normalIndices.push_back(normalIndex - 1);
+          }
+        }
+
+        // 增加頂點數量
+        vertexCount++;
+
+        // 跳過空白字符
+        iss >> std::ws;
+
+      } while (iss.good());
     }
   }
 
