@@ -1,0 +1,39 @@
+# Prerequisites
+*.d
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Release
+*.tar
+*.zip
+
+# Build
+build/
+bin/
+lib/
+
+# Visual Studio (Code)
+.vs/
+.vscode/

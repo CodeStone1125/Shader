@@ -1,0 +1,148 @@
+name: build
+
+on:
+  push:
+    branches: [ master, release ]
+
+permissions:
+  statuses: write
+  contents: read
+
+jobs:
+  zip-homework:
+    name: Build Homework Zip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Checkout submodules
+        run: git submodule update --init --recursive --depth 1
+      
+      - name: zip release
+        run: bash script/release.sh
+
+      - name: test unzip
+        run: mkdir hw2 && mv hw2.zip hw2/ && cd hw2 && unzip hw2.zip && rm hw2.zip
+      
+      - name: cache release zip
+        uses: actions/upload-artifact@v2
+        with:
+          name: hw2
+          path: ${{github.workspace}}/hw2
+
+  build-linux:
+    name: Ubuntu 20.04
+    needs: zip-homework
+    runs-on: ubuntu-20.04
+    env:
+      CFLAGS: -Werror
+      CXXFLAGS: -Werror
+    steps:
+      - name: Load release zip
+        uses: actions/download-artifact@v2
+        with:
+          name: hw2
+      
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install xorg-dev
+
+      - name: Ingore unused variable
+        run: sed -i '1 i\add_definitions(-Wno-unused)' CMakeLists.txt
+        if: github.ref == 'refs/heads/release'
+
+      - name: Configure release
+        run: cmake -S ${{github.workspace}}/ -B ${{github.workspace}}/build_rel -DCMAKE_BUILD_TYPE=Release
+      - name: Build release
+        run: cmake --build ${{github.workspace}}/build_rel --config Release --parallel
+
+      - name: Configure debug
+        run: cmake -S ${{github.workspace}}/ -B ${{github.workspace}}/build_dbg -DCMAKE_BUILD_TYPE=Debug
+      - name: Build debug
+        run: cmake --build ${{github.workspace}}/build_dbg --config Debug --parallel
+
+  build-macos:
+    name: Cocoa-12
+    needs: zip-homework
+    runs-on: macos-12
+
+    steps:
+      - name: Load release zip
+        uses: actions/download-artifact@v2
+        with:
+          name: hw2
+
+      - name: Configure release
+        run: cmake -B ${{github.workspace}}/build_rel -DCMAKE_BUILD_TYPE=Release
+      - name: Build release
+        run: cmake --build ${{github.workspace}}/build_rel --config Release --parallel
+
+      - name: Configure debug
+        run: cmake -B ${{github.workspace}}/build_dbg -DCMAKE_BUILD_TYPE=Debug
+      - name: Build debug
+        run: cmake --build ${{github.workspace}}/build_dbg --config Debug --parallel
+
+
+  build-windows-vs2019:
+    name: Win32-2019
+    needs: zip-homework
+    runs-on: 	windows-2019
+    env:
+      CFLAGS: /WX
+      CXXFLAGS: /WX
+    steps:
+      - name: Load release zip
+        uses: actions/download-artifact@v2
+        with:
+          name: hw2
+
+      - name: Configure release
+        run: cmake -B ${{github.workspace}}/build_rel -G "Visual Studio 16 2019" -DCMAKE_BUILD_TYPE=Release
+      - name: Build release
+        run: cmake --build ${{github.workspace}}/build_rel --config Release --parallel
+
+      - name: Configure debug
+        run: cmake -B ${{github.workspace}}/build_dbg -G "Visual Studio 16 2019" -DCMAKE_BUILD_TYPE=Debug
+      - name: Build debug
+        run: cmake --build ${{github.workspace}}/build_dbg --config Debug --parallel
+
+  build-windows-vs2022:
+    name: Win32-2022
+    needs: zip-homework
+    runs-on: 	windows-2022
+    env:
+      CFLAGS: /WX
+      CXXFLAGS: /WX
+    steps:
+      - name: Load release zip
+        uses: actions/download-artifact@v2
+        with:
+          name: hw2
+
+      - name: Configure release
+        run: cmake -B ${{github.workspace}}/build_rel -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release
+      - name: Build release
+        run: cmake --build ${{github.workspace}}/build_rel --config Release --parallel
+
+      - name: Configure debug
+        run: cmake -B ${{github.workspace}}/build_dbg -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Debug
+      - name: Build debug
+        run: cmake --build ${{github.workspace}}/build_dbg --config Debug --parallel
+
+  build-windows-vs2019-msbuild:
+    name: Win32-2019-msbuild
+    needs: zip-homework
+    runs-on: windows-2019
+    steps:
+      - name: Load release zip
+        uses: actions/download-artifact@v2
+        with:
+          name: hw2
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+      
+      - name: build release
+        run: msbuild vs2019/hw2.sln /p:Configuration=Release
+
+      - name: build debug
+        run: msbuild vs2019/hw2.sln /p:Configuration=Debug
