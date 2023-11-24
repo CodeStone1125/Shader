@@ -62,7 +62,6 @@ void loadPrograms() {
 
 void loadModels() {
   // TODO#1-1 Commnet out example object and uncomment models
- 
 
   Model* m = Model::fromObjectFile("../assets/models/cube/cube.obj");
   m->textures.push_back(createTexture("../assets/models/cube/texture.bmp"));
@@ -93,6 +92,123 @@ void loadModels() {
    *           GL_TEXTURE_WRAP is set to GL_REPEAT in createTexture, you may need to know
    *           what this means to set m->textures correctly
    */
+  Model* plane = new Model();
+
+  // Manually set plane positions, normals, and texcoords
+  // Adjusted positions based on the specified size and center position
+  float sizeX = 8.192f;
+  float sizeY = 1.0f;
+  float sizeZ = 5.12f;
+  float centerX = 0.0f;
+  float centerY = 0.0f;
+  float centerZ = 0.0f;
+
+  plane->positions = {
+      // 上平面
+      -sizeX / 2 + centerX,
+      centerY,
+      sizeZ / 2 + centerZ,
+      sizeX / 2 + centerX,
+      centerY,
+      sizeZ / 2 + centerZ,
+      sizeX / 2 + centerX,
+      centerY,
+      -sizeZ / 2 + centerZ,
+      -sizeX / 2 + centerX,
+      centerY,
+      -sizeZ / 2 + centerZ,
+
+      // 下平面
+      -sizeX / 2 + centerX,
+      -sizeY / 2 + centerY,
+      -sizeZ / 2 + centerZ,
+      sizeX / 2 + centerX,
+      -sizeY / 2 + centerY,
+      -sizeZ / 2 + centerZ,
+      sizeX / 2 + centerX,
+      -sizeY / 2 + centerY,
+      sizeZ / 2 + centerZ,
+      -sizeX / 2 + centerX,
+      -sizeY / 2 + centerY,
+      sizeZ / 2 + centerZ,
+
+      // 前(以DEMO照片為基準)
+      -sizeX / 2 + centerX,
+      -sizeY / 2 + centerY,
+      sizeZ / 2 + centerZ,
+      sizeX / 2 + centerX,
+      -sizeY / 2 + centerY,
+      sizeZ / 2 + centerZ,
+      sizeX / 2 + centerX,
+      centerY,
+      sizeZ / 2 + centerZ,
+      -sizeX / 2 + centerX,
+      centerY,
+      sizeZ / 2 + centerZ,
+
+      // 右
+      sizeX / 2 + centerX,
+      -sizeY / 2 + centerY,
+      sizeZ / 2 + centerZ,
+      sizeX / 2 + centerX,
+      -sizeY / 2 + centerY,
+      -sizeZ / 2 + centerZ,
+      sizeX / 2 + centerX,
+      centerY,
+      -sizeZ / 2 + centerZ,
+      sizeX / 2 + centerX,
+      centerY,
+      sizeZ / 2 + centerZ,
+
+      // 後
+      -sizeX / 2 + centerX,
+      -sizeY / 2 + centerY,
+      -sizeZ / 2 + centerZ,
+      -sizeX / 2 + centerX,
+      centerY,
+      -sizeZ / 2 + centerZ,
+      sizeX / 2 + centerX,
+      centerY,
+      -sizeZ / 2 + centerZ,
+      sizeX / 2 + centerX,
+      -sizeY / 2 + centerY,
+      -sizeZ / 2 + centerZ,
+
+      // 左
+      -sizeX / 2 + centerX,
+      -sizeY / 2 + centerY,
+      -sizeZ / 2 + centerZ,
+      -sizeX / 2 + centerX,
+      -sizeY / 2 + centerY,
+      sizeZ / 2 + centerZ,
+      -sizeX / 2 + centerX,
+      centerY,
+      sizeZ / 2 + centerZ,
+      -sizeX / 2 + centerX,
+      centerY,
+      -sizeZ / 2 + centerZ,
+  };
+
+  // Assuming the plane is facing upwards, set normals
+  plane->normals = {0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f};
+
+  // Set texcoords
+  // Adjusted texcoords based on the specified texture mapping size
+  float textureSizeX = 4.096f;
+  float textureSizeY = 2.56f;
+
+  plane->texcoords = {
+      0.0f, 0.0f, sizeX / textureSizeX, 0.0f, sizeX / textureSizeX, sizeY / textureSizeY, 0.0f, sizeY / textureSizeY};
+
+  // Add texture "../assets/models/Wood_maps/AT_Wood.jpg"
+  plane->textures.push_back(createTexture("../assets/models/Wood_maps/AT_Wood.jpg"));
+
+  // Set m->numVertex, m->drawMode
+  plane->numVertex = 24;  // 8頂點 x 3坐標
+  plane->drawMode = GL_QUADS;
+
+  // Add model to ctx.models
+  ctx.models.push_back(plane);
 }
 
 void setupObjects() {
@@ -113,6 +229,9 @@ void setupObjects() {
   ctx.objects.push_back(new Object(2, glm::translate(glm::identity<glm::mat4>(), glm::vec3(5, 0, 3))));
 
   // TODO#3-2: Put the plane into scene
+  Object* planeObject = new Object(3, glm::translate(glm::identity<glm::mat4>(), glm::vec3(4.096, 0, 2.56)));
+  ctx.objects.push_back(planeObject);
+  //(*ctx.objects.rbegin())->textureIndex = 2;  // Set the correct texture index for the plane model
 
 }
 

@@ -97,12 +97,20 @@ void BasicProgram::doMainLoop() {
     GLint mmatLoc = glGetUniformLocation(programId, "ModelMatrix");
     glUniformMatrix4fv(mmatLoc, 1, GL_FALSE, m);
 
+    // Activate texture unit and bind the texture
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, model->textures[ctx->objects[i]->textureIndex]);
+
+    // Pass texture unit to shader
     glUniform1i(glGetUniformLocation(programId, "ourTexture"), 0);
-    
+
+    // Draw the object
     glDrawArrays(model->drawMode, 0, model->numVertex);
+
+    // Unbind the vertex array after drawing
     glBindVertexArray(0);
+
+    
   }
   glUseProgram(0);
 }
