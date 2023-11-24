@@ -8,7 +8,6 @@ bool BasicProgram::load() {
 
   int num_model = (int)ctx->models.size();
   VAO = new GLuint[num_model];
-
   /* TODO#2-2: Pass model vertex data to vertex buffer
    *           1. Generate and bind vertex array object (VAO) for each model
    *           2. Generate and bind three vertex buffer objects (VBOs) for each model
@@ -25,6 +24,30 @@ bool BasicProgram::load() {
    *           - glEnableVertexAttribArray
    *           - glVertexAttribPointer
    */
+  glGenVertexArrays(num_model, VAO);
+
+  for (int i = 0; i < num_model; i++) {
+    glBindVertexArray(VAO[i]);
+    Model* model = ctx->models[i];
+
+    GLuint VBO[3];
+    glGenBuffers(3, VBO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
+    glBufferData(GL_ARRAY_BUFFER, model->positions.size() * sizeof(float), model->positions.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+    glBufferData(GL_ARRAY_BUFFER, model->normals.size() * sizeof(float), model->normals.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+    glBufferData(GL_ARRAY_BUFFER, model->texcoords.size() * sizeof(float), model->texcoords.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+  }
 
   return programId != 0;
 }
@@ -53,7 +76,33 @@ void BasicProgram::doMainLoop() {
    *           - glUniform1i
    *           - glDrawArrays
    */
+  // 1. use and bind program (BasicProgram::programId)
+  glUseProgram(programId);
+  int obj_num = (int)ctx->objects.size();
+  for (int i = 0; i < obj_num; i++) {
+    int modelIndex = ctx->objects[i]->modelIndex;
+    glBindVertexArray(VAO[modelIndex]);
 
-  
+    Model* model = ctx->models[modelIndex];
+
+    const float* p = ctx->camera->getProjectionMatrix();
+    GLint pmatLoc = glGetUniformLocation(programId, "Projection");
+    glUniformMatrix4fv(pmatLoc, 1, GL_FALSE, p);
+
+    const float* v = ctx->camera->getViewMatrix();
+    GLint vmatLoc = glGetUniformLocation(programId, "ViewMatrix");
+    glUniformMatrix4fv(vmatLoc, 1, GL_FALSE, v);
+
+    const float* m = glm::value_ptr(ctx->objects[i]->transformMatrix * model->modelMatrix);
+    GLint mmatLoc = glGetUniformLocation(programId, "ModelMatrix");
+    glUniformMatrix4fv(mmatLoc, 1, GL_FALSE, m);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, model->textures[ctx->objects[i]->textureIndex]);
+    glUniform1i(glGetUniformLocation(programId, "ourTexture"), 0);
+    
+    glDrawArrays(model->drawMode, 0, model->numVertex);
+    glBindVertexArray(0);
+  }
   glUseProgram(0);
 }

@@ -23,7 +23,7 @@ out vec2 TexCoord;
 //          a. The output is FragColor
 //          b. You may pass texture to shader with uniform sampler2D sampler
 //          c. You may sample color for this vertex with texture() function
-
 void main() {
-  
+    gl_Position = Projection * ViewMatrix * ModelMatrix * vec4(position, 1.0);
+    TexCoord = texCoord;
 }
