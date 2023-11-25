@@ -87,23 +87,30 @@ void main() {
 
     // Spotlight
     if (sl.enable == 1) {
+        vec3 lightDirSpot = normalize(sl.position - FragPos);
         float distanceSpot = length(sl.position - FragPos);
+
+        // Attenuation
         float attenuationSpot = 1.0 / (sl.constant + sl.linear * distanceSpot + sl.quadratic * (distanceSpot * distanceSpot));
 
-        vec3 lightDirSpot = normalize(sl.position - FragPos);
+        // Spotlight cutoff angle
         float theta = dot(lightDirSpot, normalize(-sl.direction));
-        float intensity = max(theta, 0.0);
-        float spotEffect = smoothstep(sl.cutOff, sl.outerCutOff, intensity);
+        float spotEffect = smoothstep(sl.cutOff, 1.0, theta);
 
-        vec3 diffuseSpot = sl.enable * sl.lightColor * (diff * material.diffuse) * attenuationSpot * spotEffect;
+        // Diffuse reflection
+        float diffSpot = max(dot(norm, lightDirSpot), 0.0);
+        vec3 diffuseSpot = sl.enable * sl.lightColor * (diffSpot * material.diffuse) * attenuationSpot * spotEffect;
 
+        // Specular reflection
         vec3 reflectDirSpot = reflect(-lightDirSpot, norm);
         float specSpot = pow(max(dot(viewDir, reflectDirSpot), 0.0), material.shininess);
         vec3 specularSpot = sl.enable * sl.lightColor * (specSpot * material.specular) * attenuationSpot * spotEffect;
 
+        // Add to final result
         diffuse += diffuseSpot;
         specular += specularSpot;
     }
+
 
     vec3 result = ambient + diffuse + specular;
     color = texture(ourTexture, TexCoord) * vec4(result, 1.0);
