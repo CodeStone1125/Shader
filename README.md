@@ -144,15 +144,20 @@ I will divide this task in to three parts:
 1. basic.vert
 2. basic.frag
 3. basic.cpp
+
 #### basic.vert
-I passed `gl_Position` and computation from `Projection` ` ViewMatrix ` and  `ModelMatrix` to get the
-correct position in scene. And `out vec2 TexCoord` was passed to `layout(location = 2) in vec2 texCoord`.
+I passed `gl_Position` and performed computations using `Projection`, `ViewMatrix`, and `ModelMatrix` to
+obtain the correct position in the scene. Additionally, I passed the `out vec2 TexCoord` to the `layout
+(location = 2) in vec2 texCoord` in the vertex shader, allowing the transfer of texture coordinates to the
+fragment shader.
+
 ```cpp
 void main() {
     gl_Position = Projection * ViewMatrix * ModelMatrix * vec4(position, 1.0);
     TexCoord = texCoord;
 }
 ```
+
 ### Task#3 Display texture plane (10%)
 ### Task#4 Light shader program (three light source mixed)
 ## Problems you encountered
