@@ -66,7 +66,7 @@ cd bin
 ## Implementation(HOW & WHY)
 ### Task#1 OBJ file parser (10%)
 Thanks to TA for writing the code to push necessary files like the obj file and texture. Therefore, defining 
-how to handle the obj file is the only thing I need to do in Task#1. I use four if-else conditions to handle v, vn,
+how to handle the obj file is the only thing I need to do in Task#1. I use four if-else conditions to deal with v, vn,
 vt, and f respectively. Here is my code in `model.cpp`:
 
 ```cpp
@@ -138,7 +138,21 @@ vt, and f respectively. Here is my code in `model.cpp`:
       } while (iss.good());
     }
 ```
+
 ### Task#2 Basic shader program (20%)
+I will divide this task in to three parts:
+1. basic.vert
+2. basic.frag
+3. basic.cpp
+#### basic.vert
+I passed `gl_Position` and computation from `Projection` ` ViewMatrix ` and  `ModelMatrix` to get the
+correct position in scene. And `out vec2 TexCoord` was passed to `layout(location = 2) in vec2 texCoord`.
+```cpp
+void main() {
+    gl_Position = Projection * ViewMatrix * ModelMatrix * vec4(position, 1.0);
+    TexCoord = texCoord;
+}
+```
 ### Task#3 Display texture plane (10%)
 ### Task#4 Light shader program (three light source mixed)
 ## Problems you encountered
