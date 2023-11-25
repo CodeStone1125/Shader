@@ -340,11 +340,12 @@ Then Adjusted positions based on the specified size and center position.
 }
 ```
 then Put the plane into scene
-```
+```cpp
   // TODO#3-2: Put the plane into scene
   Object* planeObject = new Object(3, glm::translate(glm::identity<glm::mat4>(), glm::vec3(4.096, 0, 2.56)));
   ctx.objects.push_back(planeObject);
 ```
+
 ### Task#4 Light shader program (three light source mixed)
 
 ## Problems you encountered
