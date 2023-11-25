@@ -192,13 +192,34 @@ void loadModels() {
   // Assuming the plane is facing upwards, set normals
   plane->normals = {0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f};
 
-  // Set texcoords
+  /* Set texcoords */ 
   // Adjusted texcoords based on the specified texture mapping size
   float textureSizeX = 4.096f;
   float textureSizeY = 2.56f;
 
+  //上平面
   plane->texcoords = {
       0.0f, 0.0f, sizeX / textureSizeX, 0.0f, sizeX / textureSizeX, sizeY / textureSizeY, 0.0f, sizeY / textureSizeY};
+  
+  //下平面
+  plane->texcoords.insert(plane->texcoords.end(), {0.0f, 0.0f, sizeX / textureSizeX, 0.0f, sizeX / textureSizeX,
+                                                   sizeY / textureSizeY, 0.0f, sizeY / textureSizeY});
+
+  // 右平面
+  plane->texcoords.insert(plane->texcoords.end(), {0.0f, 0.0f, sizeZ / textureSizeX, 0.0f, sizeZ / textureSizeX,
+                                                   sizeY / textureSizeY, 0.0f, sizeY / textureSizeY});
+
+  // 前平面
+  plane->texcoords.insert(plane->texcoords.end(), {0.0f, 0.0f, sizeX / textureSizeX, 0.0f, sizeX / textureSizeX,
+                                                   sizeY / textureSizeY, 0.0f, sizeY / textureSizeY});
+
+  // 后平面
+  plane->texcoords.insert(plane->texcoords.end(), {0.0f, 0.0f, sizeX / textureSizeX, 0.0f, sizeX / textureSizeX,
+                                                   sizeY / textureSizeY, 0.0f, sizeY / textureSizeY});
+
+  // 左平面
+  plane->texcoords.insert(plane->texcoords.end(), {0.0f, 0.0f, sizeZ / textureSizeX, 0.0f, sizeZ / textureSizeX,
+                                                   sizeY / textureSizeY, 0.0f, sizeY / textureSizeY});
 
   // Add texture "../assets/models/Wood_maps/AT_Wood.jpg"
   plane->textures.push_back(createTexture("../assets/models/Wood_maps/AT_Wood.jpg"));
