@@ -272,7 +272,7 @@ void BasicProgram::doMainLoop() {
 }
 ```
 ### Task#3 Display texture plane (10%)
-I manully set plane positions, normals, and texcoords and I did not set the center point to plane.
+I manully set plane positions, normals, and texcoords.
 Then Adjusted positions based on the specified size and center position.
 
 ```cpp
@@ -347,7 +347,187 @@ then Put the plane into scene
 ```
 
 ### Task#4 Light shader program (three light source mixed)
+#### light.vert
+The `light.vert` code and explain, the logic is similar to `basic.vert`: 
+```glsl
+void main() {
+    // Calculate world-space position, normal, and texture coordinates
+    FragPos = vec3(ModelMatrix * vec4(position, 1.0));
+    Normal = mat3(transpose(inverse(ModelMatrix))) * normal;
+    TexCoord = texCoord;
+
+    // Calculate gl_Position (clip space position)
+    gl_Position = Projection * ViewMatrix * ModelMatrix * vec4(position, 1.0);
+}
+```
+#### light.frag
+1. Ambient Light Calculation:
+
+```glsl
+vec3 ambient = dl.enable * dl.lightColor * material.ambient;
+```
+This calculates the ambient light contribution based on the presence of a directional light (dl.enable), the light color, and the ambient material property.
+
+2. Normalization and View Direction Calculation:
+```glsl
+vec3 norm = normalize(Normal);
+vec3 viewDir = normalize(viewPos - FragPos);
+Normalizes the normal vector (Normal) and calculates the normalized view direction.
+```
+
+3. Directional Light Reflection (Diffuse and Specular):
+```glsl
+vec3 lightDir = normalize(-dl.direction);
+float diff = max(dot(norm, lightDir), 0.0);
+vec3 diffuse = dl.enable * dl.lightColor * (diff * material.diffuse);
+
+vec3 reflectDir = reflect(-lightDir, norm);
+float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+vec3 specular = dl.enable * dl.lightColor * (spec * material.specular);
+```
+Calculates the diffuse and specular reflection for a directional light.
+
+4. Point Light Reflection (Diffuse and Specular):
+```glsl
+if (pl.enable == 1) {
+    // ... [Point light calculations]
+    diffuse += diffusePoint;
+    specular += specularPoint;
+}
+```
+If a point light is enabled (pl.enable == 1), it calculates the diffuse and specular reflections considering 
+light attenuation.
+
+5. Spotlight Reflection (Diffuse and Specular):
+```glsl
+if (sl.enable == 1) {
+    // ... [Spotlight calculations]
+    diffuse += diffuseSpot;
+    specular += specularSpot;
+}
+```
+If a spotlight is enabled (sl.enable == 1), it calculates the diffuse and specular reflections considering light 
+attenuation and the spotlight's cutoff angle.
+
+6. Final Result and Texture Mapping:
+```glsl
+vec3 result = ambient + diffuse + specular;
+color = texture(ourTexture, TexCoord) * vec4(result, 1.0);
+```
+Combines ambient, diffuse, and specular components to get the final color, which is then multiplied by the texture 
+color (texture(ourTexture, TexCoord)) for texture mapping.
+
+#### light.cpp
+```cpp
+bool LightProgram::load() {
+ /**********************************************************************************************
+  Same as load() in basic.cpp so removed them for better read experience
+  **********************************************************************************************/
+}
+
+void LightProgram::doMainLoop() {
+  /* TODO#4-3: Render objects with shader
+   *           1. use and bind program (BasicProgram::programId)
+   *           2. Iterate all objects (ctx->objects)
+   *           3. Load current model VAO for object
+   *           4. Pass projection, view, model matrix to shaders
+   *           5. Pass light and material parameters to shader
+   *           6. Pass model texture to shaders
+   *           7. Draw with glDrawArrays
+   * Note:
+   *           1. light parameters are provided in context.h
+   *           2. material parameter for each object can be found in ctx->objects[i]->material
+   */
+
+   // 1. use and bind program (BasicProgram::programId)
+  glUseProgram(programId);
+  int obj_num = (int)ctx->objects.size();
+  // 2. Iterate all objects (ctx->objects)
+  for (int i = 0; i < obj_num; i++) {
+    int modelIndex = ctx->objects[i]->modelIndex;
+
+    // 3. Load current model VAO for object
+    glBindVertexArray(VAO[modelIndex]);
+
+    Model* model = ctx->models[modelIndex];
+    // 4. Pass projection, view, model matrix to shaders
+    const float* p = ctx->camera->getProjectionMatrix();
+    GLint pmatLoc = glGetUniformLocation(programId, "Projection");
+    glUniformMatrix4fv(pmatLoc, 1, GL_FALSE, p);
+
+    const float* v = ctx->camera->getViewMatrix();
+    GLint vmatLoc = glGetUniformLocation(programId, "ViewMatrix");
+    glUniformMatrix4fv(vmatLoc, 1, GL_FALSE, v);
+
+    const float* m = glm::value_ptr(ctx->objects[i]->transformMatrix * model->modelMatrix);
+    GLint mmatLoc = glGetUniformLocation(programId, "ModelMatrix");
+    glUniformMatrix4fv(mmatLoc, 1, GL_FALSE, m);
+
+    // 5. Pass light and material parameters to shader
+    // unifrom Material material
+    glUniform3fv(glGetUniformLocation(programId, "material.ambient"), 1,
+                 glm::value_ptr(ctx->objects[i]->material.ambient));
+    glUniform3fv(glGetUniformLocation(programId, "material.diffuse"), 1,
+                 glm::value_ptr(ctx->objects[i]->material.diffuse));
+    glUniform3fv(glGetUniformLocation(programId, "material.specular"), 1,
+                 glm::value_ptr(ctx->objects[i]->material.specular));
+    glUniform1f(glGetUniformLocation(programId, "material.shininess"), ctx->objects[i]->material.shininess);
+
+    // uniform PointLight pl
+    glUniform1i(glGetUniformLocation(programId, "pl.enable"), ctx->pointLightEnable);
+    glUniform3fv(glGetUniformLocation(programId, "pl.position"), 1, glm::value_ptr(ctx->pointLightPosition));
+    glUniform3fv(glGetUniformLocation(programId, "pl.lightColor"), 1, glm::value_ptr(ctx->pointLightColor));
+    glUniform1f(glGetUniformLocation(programId, "pl.constant"), ctx->pointLightConstant);
+    glUniform1f(glGetUniformLocation(programId, "pl.linear"), ctx->pointLightLinear);
+    glUniform1f(glGetUniformLocation(programId, "pl.quadratic"), ctx->pointLightQuardratic);
+
+
+    // uniform Spotlight sl
+    glUniform1i(glGetUniformLocation(programId, "sl.enable"), ctx->spotLightEnable);
+    glUniform3fv(glGetUniformLocation(programId, "sl.position"), 1, glm::value_ptr(ctx->spotLightPosition));
+    glUniform3fv(glGetUniformLocation(programId, "sl.direction"), 1, glm::value_ptr(ctx->spotLightDirection));
+    glUniform3fv(glGetUniformLocation(programId, "sl.lightColor"), 1, glm::value_ptr(ctx->spotLightColor));
+    glUniform1f(glGetUniformLocation(programId, "sl.cutOff"), ctx->spotLightCutOff);
+    glUniform1f(glGetUniformLocation(programId, "sl.constant"), ctx->spotLightConstant);
+    glUniform1f(glGetUniformLocation(programId, "sl.linear"), ctx->spotLightLinear);
+    glUniform1f(glGetUniformLocation(programId, "sl.quadratic"), ctx->spotLightQuardratic);
+
+
+    // uniform DirectionLight dl
+    glUniform1i(glGetUniformLocation(programId, "dl.enable"), ctx->directionLightEnable);
+    glUniform3fv(glGetUniformLocation(programId, "dl.direction"), 1, glm::value_ptr(ctx->directionLightDirection));
+    glUniform3fv(glGetUniformLocation(programId, "dl.lightColor"), 1, glm::value_ptr(ctx->directionLightColor));
+
+
+    // 6. Pass model texture to shaders
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, model->textures[ctx->objects[i]->textureIndex]);
+
+    // Pass texture unit to shader
+    glUniform1i(glGetUniformLocation(programId, "ourTexture"), 0);
+
+    // 7. Draw with glDrawArrays
+    glDrawArrays(model->drawMode, 0, model->numVertex);
+
+    // Unbind the vertex array after drawing
+    glBindVertexArray(0);
+  }
+
+  glUseProgram(0);
+}
+```
 
 ## Problems you encountered
+### GFX Glitch
+I forgot to write condition code to handle `plane->drawMode = GL_QUADS`, so the bottle will be render
+by `plane->drawMode = GL_TRIANGLES` then GFX Glitch issue happened on the bottle.
+![Bottle_issue](https://github.com/CodeStone1125/Shader/assets/72511296/e583f155-f324-4b33-828d-aed40e58d48c)
+
+### Texture issue
+I forget I used three VBO buffer therefore my VBO stride should not be `8 * sizeof(GLfloat)` but `3 * sizeof(GLfloat)` .
+Which is  different way compared to [https://learnopengl.com/Getting-started/Textures](https://learnopengl.com/Getting-started/Textures).
+Therefore the Texture failed.
+![Texture_issue](https://github.com/CodeStone1125/Shader/assets/72511296/9f468c33-9376-4141-ae4e-112bab6d3e96)
+
 
 
