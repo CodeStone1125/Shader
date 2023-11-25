@@ -37,5 +37,11 @@ out vec3 FragPos;
 //              in light.cpp rather than in shaders
 
 void main() {
+    // Calculate world-space position, normal, and texture coordinates
+    FragPos = vec3(ModelMatrix * vec4(position, 1.0));
+    Normal = mat3(transpose(inverse(ModelMatrix))) * normal;
+    TexCoord = texCoord;
 
+    // Calculate gl_Position (clip space position)
+    gl_Position = Projection * ViewMatrix * ModelMatrix * vec4(position, 1.0);
 }

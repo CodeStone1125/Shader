@@ -41,7 +41,7 @@ struct Spotlight {
     vec3 lightColor;
     float cutOff;
 
-    // Paramters for attenuation formula
+    // Parameters for attenuation formula
     float constant;
     float linear;
     float quadratic;      
@@ -52,10 +52,59 @@ uniform DirectionLight dl;
 uniform PointLight pl;
 uniform Spotlight sl;
 
-
-
-
-
 void main() {
+    // Calculate lighting components
+    vec3 ambient = dl.enable * dl.lightColor * material.ambient;
 
+    vec3 norm = normalize(Normal);
+    vec3 viewDir = normalize(viewPos - FragPos);
+
+    // Directional Light
+    vec3 lightDir = normalize(-dl.direction);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = dl.enable * dl.lightColor * (diff * material.diffuse);
+
+    vec3 reflectDir = reflect(-lightDir, norm);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    vec3 specular = dl.enable * dl.lightColor * (spec * material.specular);
+
+    // Point Light
+    if (pl.enable == 1) {
+        float distance = length(pl.position - FragPos);
+        float attenuation = 1.0 / (pl.constant + pl.linear * distance + pl.quadratic * (distance * distance));
+
+        vec3 lightDirPoint = normalize(pl.position - FragPos);
+        float diffPoint = max(dot(norm, lightDirPoint), 0.0);
+        vec3 diffusePoint = pl.enable * pl.lightColor * (diffPoint * material.diffuse) * attenuation;
+
+        vec3 reflectDirPoint = reflect(-lightDirPoint, norm);
+        float specPoint = pow(max(dot(viewDir, reflectDirPoint), 0.0), material.shininess);
+        vec3 specularPoint = pl.enable * pl.lightColor * (specPoint * material.specular) * attenuation;
+
+        diffuse += diffusePoint;
+        specular += specularPoint;
+    }
+
+    // Spotlight
+    if (sl.enable == 1) {
+        float distanceSpot = length(sl.position - FragPos);
+        float attenuationSpot = 1.0 / (sl.constant + sl.linear * distanceSpot + sl.quadratic * (distanceSpot * distanceSpot));
+
+        vec3 lightDirSpot = normalize(sl.position - FragPos);
+        float theta = dot(lightDirSpot, normalize(-sl.direction));
+        float intensity = max(theta, 0.0);
+        float spotEffect = smoothstep(sl.cutOff, sl.outerCutOff, intensity);
+
+        vec3 diffuseSpot = sl.enable * sl.lightColor * (diff * material.diffuse) * attenuationSpot * spotEffect;
+
+        vec3 reflectDirSpot = reflect(-lightDirSpot, norm);
+        float specSpot = pow(max(dot(viewDir, reflectDirSpot), 0.0), material.shininess);
+        vec3 specularSpot = sl.enable * sl.lightColor * (specSpot * material.specular) * attenuationSpot * spotEffect;
+
+        diffuse += diffuseSpot;
+        specular += specularSpot;
+    }
+
+    vec3 result = ambient + diffuse + specular;
+    color = texture(ourTexture, TexCoord) * vec4(result, 1.0);
 }

@@ -231,7 +231,6 @@ void setupObjects() {
   // TODO#3-2: Put the plane into scene
   Object* planeObject = new Object(3, glm::translate(glm::identity<glm::mat4>(), glm::vec3(4.096, 0, 2.56)));
   ctx.objects.push_back(planeObject);
-  //(*ctx.objects.rbegin())->textureIndex = 2;  // Set the correct texture index for the plane model
 
 }
 
